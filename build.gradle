@@ -174,11 +174,11 @@ dependencies {
 buildRpm {
     postInstall 'mkdir -p -m 0755 /usr/local/nn-analytics/dfs/name/current && ' +
             'mkdir -p -m 0755 /usr/local/nn-analytics/dfs/name/legacy && ' +
-            'chown -R hdfs: /usr/local/nn-analytics/dfs && ' +
+            'chown -R hadoop: /usr/local/nn-analytics/dfs && ' +
             'mkdir -p -m 0755 /usr/local/nn-analytics/db && ' +
-            'chown -R hdfs: /usr/local/nn-analytics/db &&' +
+            'chown -R hadoop: /usr/local/nn-analytics/db &&' +
             'mkdir -p -m 0755 /var/log/nn-analytics && ' +
-            'chown hdfs: /var/log/nn-analytics && ' +
+            'chown hadoop: /var/log/nn-analytics && ' +
             'cp /usr/local/nn-analytics/bin/nn-analytics /etc/init.d/ && ' +
             'chkconfig --add nn-analytics'
 }
@@ -186,11 +186,11 @@ buildRpm {
 buildDeb {
     postInstall 'mkdir -p -m 0755 /usr/local/nn-analytics/dfs/name/current && ' +
             'mkdir -p -m 0755 /usr/local/nn-analytics/dfs/name/legacy && ' +
-            'chown -R hdfs: /usr/local/nn-analytics/dfs && ' +
+            'chown -R hadoop: /usr/local/nn-analytics/dfs && ' +
             'mkdir -p -m 0755 /usr/local/nn-analytics/db && ' +
-            'chown -R hdfs: /usr/local/nn-analytics/db &&' +
+            'chown -R hadoop: /usr/local/nn-analytics/db &&' +
             'mkdir -p -m 0755 /var/log/nn-analytics && ' +
-            'chown hdfs: /var/log/nn-analytics && ' +
+            'chown hadoop: /var/log/nn-analytics && ' +
             'cp /usr/local/nn-analytics/bin/nn-analytics /etc/init.d/ && ' +
             'update-rc.d nn-analytics defaults'
 }

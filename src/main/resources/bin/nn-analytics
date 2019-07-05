@@ -37,7 +37,7 @@ case "$1" in
 start)
         if [ $(/usr/bin/id -u) -eq 0 ]; then
             printf "%-50s" "Starting $NAME..."
-            PID=`su hdfs -c $DAEMON_PATH/$DAEMON`
+            PID=`su hadoop -c $DAEMON_PATH/$DAEMON`
             echo "Saving PID" $PID " to " $PIDFILE
             if [ -z $PID ]; then
                 printf "%s\n" "Failed to write PID."

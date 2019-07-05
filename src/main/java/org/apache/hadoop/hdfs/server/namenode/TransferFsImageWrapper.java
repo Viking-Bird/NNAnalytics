@@ -61,16 +61,16 @@ public class TransferFsImageWrapper {
   public void downloadMostRecentImage() throws IOException {
     FileSystem fileSystem = nameNodeLoader.getFileSystem();
     Configuration conf = nameNodeLoader.getConfiguration();
-    String namespaceDirPath = conf.get(DFSConfigKeys.DFS_NAMENODE_NAME_DIR_KEY);
+    String namespaceDirPath = conf.get(DFSConfigKeys.DFS_NAMENODE_NAME_DIR_KEY); // 获取保存FsImage文件的目录
     File namespaceDir = new File(namespaceDirPath, "current");
     SecurityUtil.login(
         conf,
         DFSConfigKeys.DFS_NAMENODE_KEYTAB_FILE_KEY,
         DFSConfigKeys.DFS_NAMENODE_USER_NAME_KEY,
         InetAddress.getLocalHost().getCanonicalHostName());
-    InetSocketAddress addressOfActive = HAUtil.getAddressOfActive(fileSystem);
+    InetSocketAddress addressOfActive = HAUtil.getAddressOfActive(fileSystem); // 获取Active NN地址
     URL infoServer =
-        DFSUtil.getInfoServer(addressOfActive, conf, DFSUtil.getHttpClientScheme(conf)).toURL();
+        DFSUtil.getInfoServer(addressOfActive, conf, DFSUtil.getHttpClientScheme(conf)).toURL(); // 返回http或者https的NameNode RPC地址
     SecurityUtil.doAsLoginUser(
         () -> {
           NamenodeProtocol nnProtocolProxy =
@@ -82,12 +82,12 @@ public class TransferFsImageWrapper {
                       true)
                   .getProxy();
           NamespaceInfo namespaceInfo = nnProtocolProxy.versionRequest();
-          String fileId = ImageServlet.getParamStringForMostRecentImage();
+          String fileId = ImageServlet.getParamStringForMostRecentImage();// 获取FsImage文件ID
           NNStorage storage =
               new NNStorage(
                   conf,
                   FSNamesystem.getNamespaceDirs(conf),
-                  FSNamesystem.getNamespaceEditsDirs(conf));
+                  FSNamesystem.getNamespaceEditsDirs(conf));// 获取NameNode元数据存储目录
           storage.format(namespaceInfo);
           MD5Hash md5 =
               TransferFsImage.getFileClient(
@@ -95,8 +95,8 @@ public class TransferFsImageWrapper {
           FSImageTransactionalStorageInspector inspector =
               new FSImageTransactionalStorageInspector(EnumSet.of(NNStorage.NameNodeFile.IMAGE));
           storage.inspectStorageDirs(inspector);
-          File imageFile = inspector.getLatestImages().get(0).getFile();
-          MD5FileUtils.saveMD5File(imageFile, md5);
+          File imageFile = inspector.getLatestImages().get(0).getFile();// 获取最新的FsImage文件
+          MD5FileUtils.saveMD5File(imageFile, md5);// 保存文件到namespaceDir目录下
           return null;
         });
   }
