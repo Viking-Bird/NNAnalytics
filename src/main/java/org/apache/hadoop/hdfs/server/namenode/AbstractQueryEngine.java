@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import javax.servlet.http.HttpServletResponse;
+
+import com.google.gson.Gson;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.server.namenode.analytics.Helper;
 import org.apache.hadoop.hdfs.server.namenode.queries.FileTypeHistogram;
@@ -52,6 +54,7 @@ import org.apache.hadoop.hdfs.server.namenode.queries.Histograms;
 import org.apache.hadoop.hdfs.server.namenode.queries.MemorySizeHistogram;
 import org.apache.hadoop.hdfs.server.namenode.queries.SpaceSizeHistogram;
 import org.apache.hadoop.hdfs.server.namenode.queries.TimeHistogram;
+import org.apache.hadoop.hdfs.server.namenode.vo.INodeInfo;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.util.CollectionsView;
 import org.apache.hadoop.util.GSet;
@@ -657,6 +660,52 @@ public abstract class AbstractQueryEngine implements QueryEngine {
                 writer.write(node.getFullPathName() + '\n');
                 writer.flush();
               });
+    } finally {
+      IOUtils.closeStream(writer);
+      LOG.info("Closed response.");
+    }
+    long end = System.currentTimeMillis();
+    LOG.info("Sending the entire response took {} ms.", (end - start));
+  }
+
+  @Override
+  public void findINodes(Collection<INode> inodes, Integer limit, HttpServletResponse resp) throws IOException {
+    LOG.info("Returning a list of {} INodes to a client.", inodes.size());
+    long start = System.currentTimeMillis();
+    PrintWriter writer = resp.getWriter();
+    try {
+      Collection<INode> subCollection;
+      if (limit != null && limit < inodes.size()) {
+        subCollection = inodes.stream().limit(limit).collect(Collectors.toList());
+      } else {
+        subCollection = inodes;
+      }
+
+      List<INodeInfo> iNodeList = new ArrayList<>(subCollection.size());
+      subCollection
+              .stream()
+              .sorted(Comparator.comparing(INode::getFullPathName))
+              .forEach(
+                      node -> {
+                        INodeInfo iNodeInfo = new INodeInfo();
+                        iNodeInfo.setNodeId(node.getId());
+                        iNodeInfo.setAccessTime(node.getAccessTime());
+                        iNodeInfo.setModTime(node.getModificationTime());
+                        iNodeInfo.setGroupName(node.getGroupName());
+                        iNodeInfo.setUserName(node.getUserName());
+                        iNodeInfo.setPath(node.getFullPathName());
+                        if (node.isFile()){
+                          INodeFile nodeFile = node.asFile();
+                          iNodeInfo.setType(1);
+                          iNodeInfo.setFileSize(nodeFile.computeFileSize());
+                          iNodeInfo.setReplicationFactor(nodeFile.getFileReplication());
+                        }else {
+                          iNodeInfo.setType(0);
+                        }
+                        iNodeList.add(iNodeInfo);
+                      });
+      writer.write(new Gson().toJson(iNodeList));
+      writer.flush();
     } finally {
       IOUtils.closeStream(writer);
       LOG.info("Closed response.");

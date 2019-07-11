@@ -67,6 +67,9 @@ public interface QueryEngine {
   void dumpINodePaths(Collection<INode> inodes, Integer limit, HttpServletResponse resp)
       throws IOException;
 
+  void findINodes(Collection<INode> inodes, Integer limit, HttpServletResponse resp)
+          throws IOException;
+
   Map<String, Long> genericSummingHistogram(
       Stream<INode> inodes,
       Function<INode, String> namingFunction,

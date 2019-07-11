@@ -293,6 +293,7 @@ public class WebServerMain implements ApplicationMain {
       LOG.info("Disabling web authorization.");
     }
 
+    // 加载外部资源
     /* This is the call to load everything under ./resources/public as HTML resources. */
     Spark.externalStaticFileLocation(conf.getWebBaseDir());
 
@@ -858,6 +859,60 @@ public class WebServerMain implements ApplicationMain {
           }
         });
 
+      get(
+              "/findINodes",
+              (req, res) -> {
+                  res.header("Access-Control-Allow-Origin", "*");
+                  res.header("Content-Type", "application/json; charset=UTF-8");
+                  if (!nameNodeLoader.isInit()) {
+                      return "";
+                  }
+
+                  lock.writeLock().lock();
+                  try {
+                      String fullFilterStr = req.queryMap("filters").value();
+
+                      String find = req.queryMap("find").value();
+                      String[] filters = Helper.parseFilters(fullFilterStr);
+                      String[] filterOps = Helper.parseFilterOps(fullFilterStr);
+                      String set = req.queryMap("set").value();
+                      String sumStr = req.queryMap("sum").value();
+                      String[] sums = (sumStr != null) ? sumStr.split(",") : new String[] {"count"};
+                      Integer limit = req.queryMap("limit").integerValue();
+                      if (limit == null) {
+                          limit = 500;
+                      }
+
+                      for (String sum : sums) {
+                          QueryChecker.isValidQuery(set, filters, null, sum, filterOps, find);
+                      }
+
+                      Collection<INode> filteredINodes =
+                              Helper.performFilters(nameNodeLoader, set, filters, filterOps, find);
+
+                      if (sums.length == 1 && sumStr != null) {
+                          String sum = sums[0];
+                          long sumValue = nameNodeLoader.getQueryEngine().sum(filteredINodes, sum);
+                          String message = String.valueOf(sumValue);
+                          LOG.info("Returning filter result: {}.", message);
+                          res.body(message);
+                      } else if (sums.length > 1) {
+                          StringBuilder message = new StringBuilder();
+                          for (String sum : sums) {
+                              long sumValue = nameNodeLoader.getQueryEngine().sum(filteredINodes, sum);
+                              message.append(sumValue).append("\n");
+                          }
+                          res.body(message.toString());
+                      } else {
+                          nameNodeLoader.getQueryEngine().findINodes(filteredINodes, limit, res.raw());
+                      }
+
+                      return res;
+                  } finally {
+                      lock.writeLock().unlock();
+                  }
+              });
+
     /* Histogram endpoint takes 1 set of "set", "filter", "type", and  "sum" parameters and returns a histogram
     where the X-axis represents the "type" type and the Y-axis represents the "sum" type.
     Output types available dictated by "&histogramOutput=". Default is CHART form. */
@@ -873,7 +928,6 @@ public class WebServerMain implements ApplicationMain {
             res.header("Content-Type", "application/json");
             return Histograms.toChartJsJson(new HashMap<>(), "not_loaded", "", "");
           }
-
           lock.writeLock().lock();
           try {
             final String fullFilterStr = req.queryMap("filters").value();
