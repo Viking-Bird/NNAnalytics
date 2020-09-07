@@ -395,12 +395,16 @@ public class NameNodeLoader {
       conf.setBoolean(DFSConfigKeys.DFS_BLOCK_ACCESS_TOKEN_ENABLE_KEY, false);
 
       // How often, in seconds, the StandbyNode should ask the active to roll edit logs.
+      // 在HA模式下，standby NN会周期的让active NN对edits进行回滚，间隔周期由dfs.ha.log-roll.period控制，默认是120s
+      // 负数表示不触发回滚
       LOG.info("Setting: {} to: {} ", DFSConfigKeys.DFS_HA_LOGROLL_PERIOD_KEY, (-1));
       conf.setInt(DFSConfigKeys.DFS_HA_LOGROLL_PERIOD_KEY, -1);
 
+      // dfs.ha.standby.checkpoints配置项的值为true，表示使用StandBy NameNode来定时进行checkpoint操作
       LOG.info("Setting: {} to: {}", DFSConfigKeys.DFS_HA_STANDBY_CHECKPOINTS_KEY, false);
       conf.setBoolean(DFSConfigKeys.DFS_HA_STANDBY_CHECKPOINTS_KEY, false);
 
+      // 在一个锁定周期中允许的最大内容摘要计数。0或负数意味着没有限制。
       LOG.info("Setting: {} to: {}", DFSConfigKeys.DFS_CONTENT_SUMMARY_LIMIT_KEY, 0);
       conf.setInt(DFSConfigKeys.DFS_CONTENT_SUMMARY_LIMIT_KEY, 0);
 
