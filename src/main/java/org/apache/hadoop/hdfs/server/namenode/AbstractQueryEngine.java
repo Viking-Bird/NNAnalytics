@@ -585,8 +585,8 @@ public abstract class AbstractQueryEngine implements QueryEngine {
   /**
    * Get a Function that converts a Long into a Boolean expression.
    *
-   * @param value the value to compute against
-   * @param op the operation to perform
+   * @param value the value to compute against 比较的值
+   * @param op the operation to perform 执行的操作
    * @return the function representing a Long to Boolean transformation
    */
   @Override // QueryEngine

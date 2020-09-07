@@ -30,16 +30,18 @@ public class JavaStreamQueryEngine extends AbstractQueryEngine {
   private Stream<INode> produceFilteredStream(
       Collection<INode> inodes, String[] filters, String[] filterOps) {
     @SuppressWarnings("unchecked")
+    // 保存操作INode的Function函数
     final Function<INode, Boolean>[] filterArray =
         (Function<INode, Boolean>[]) new Function[filters.length];
 
+    // 1、先获取Boolean类型的Function函数
     for (int i = 0; i < filters.length; i++) {
       String filter = filters[i];
       String[] filterOp = filterOps[i].split(":");
       Function<INode, Boolean> filterFunc = getFilter(filter, filterOp);
       filterArray[i] = filterFunc;
     }
-
+    // 2、执行过滤，使用Stream filter函数对结果进行过滤
     Stream<INode> stream = inodes.parallelStream();
     for (Function<INode, Boolean> filter : filterArray) {
       stream = stream.filter(filter::apply);
@@ -109,10 +111,10 @@ public class JavaStreamQueryEngine extends AbstractQueryEngine {
     long start = System.currentTimeMillis();
     try {
       // Values for all other filters
-      String op = filterOps[0];
-      String opValue = filterOps[1];
+      String op = filterOps[0]; // 过滤操作符
+      String opValue = filterOps[1]; // 要过滤的值
 
-      // Long value filters
+      // Long value filters 数值类型过滤
       Function<INode, Long> longFunction = getFilterFunctionToLongForINode(filter);
       if (longFunction != null) {
         Function<Long, Boolean> longCompFunction =
@@ -120,14 +122,14 @@ public class JavaStreamQueryEngine extends AbstractQueryEngine {
         return longFunction.andThen(longCompFunction);
       }
 
-      // String value filters
+      // String value filters String类型过滤
       Function<INode, String> strFunction = getFilterFunctionToStringForINode(filter);
       if (strFunction != null) {
         Function<String, Boolean> strCompFunction = getFilterFunctionForString(opValue, op);
         return strFunction.andThen(strCompFunction);
       }
 
-      // Boolean value filters
+      // Boolean value filters Boolean类型过滤
       Function<INode, Boolean> boolFunction = getFilterFunctionToBooleanForINode(filter);
       if (boolFunction != null) {
         Function<Boolean, Boolean> boolCompFunction =
