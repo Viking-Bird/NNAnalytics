@@ -57,6 +57,9 @@ public class SpaceSizeHistogram {
         }
       };
 
+  /**
+   * 根据文件大小定位文件所属的大小范围
+   */
   public static final Function<Long, String> determineBucketFunction =
       size -> {
         for (Entry<String, LongRange> range : ranges.entrySet()) {

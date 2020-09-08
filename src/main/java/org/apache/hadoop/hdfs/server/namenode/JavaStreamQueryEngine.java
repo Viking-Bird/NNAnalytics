@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,132 +27,139 @@ import java.util.stream.Stream;
 
 public class JavaStreamQueryEngine extends AbstractQueryEngine {
 
-  private Stream<INode> produceFilteredStream(
-      Collection<INode> inodes, String[] filters, String[] filterOps) {
-    @SuppressWarnings("unchecked")
-    // 保存操作INode的Function函数
-    final Function<INode, Boolean>[] filterArray =
-        (Function<INode, Boolean>[]) new Function[filters.length];
+    /**
+     * 根据filter过滤条件生成想要得到的INode集合
+     * @param inodes
+     * @param filters
+     * @param filterOps
+     * @return
+     */
+    private Stream<INode> produceFilteredStream(
+            Collection<INode> inodes, String[] filters, String[] filterOps) {
+        @SuppressWarnings("unchecked")
+        // 保存操作INode的Function函数
+        final Function<INode, Boolean>[] filterArray =
+                (Function<INode, Boolean>[]) new Function[filters.length];
 
-    // 1、先获取Boolean类型的Function函数
-    for (int i = 0; i < filters.length; i++) {
-      String filter = filters[i];
-      String[] filterOp = filterOps[i].split(":");
-      Function<INode, Boolean> filterFunc = getFilter(filter, filterOp);
-      filterArray[i] = filterFunc;
+        // 1、先获取Boolean类型的Function函数
+        for (int i = 0; i < filters.length; i++) {
+            String filter = filters[i];
+            String[] filterOp = filterOps[i].split(":");
+            Function<INode, Boolean> filterFunc = getFilter(filter, filterOp);
+            filterArray[i] = filterFunc;
+        }
+        // 2、执行过滤，使用Stream filter函数对结果进行过滤
+        Stream<INode> stream = inodes.parallelStream();
+        for (Function<INode, Boolean> filter : filterArray) {
+            stream = stream.filter(filter::apply);
+        }
+
+        return stream;
     }
-    // 2、执行过滤，使用Stream filter函数对结果进行过滤
-    Stream<INode> stream = inodes.parallelStream();
-    for (Function<INode, Boolean> filter : filterArray) {
-      stream = stream.filter(filter::apply);
+
+    /**
+     * Optimized filter method for filtering down a set of INodes to a smaller subset but returns a
+     * Stream for further processing.
+     *
+     * @param inodes the main inode set to work on
+     * @param filters set of filters to use
+     * @param filterOps matching length set of filter operands and operators
+     * @return the stream of filtered inodes
+     */
+    @Override // QueryEngine
+    public Stream<INode> combinedFilterToStream(
+            Collection<INode> inodes, String[] filters, String[] filterOps) {
+        if (filters == null || filterOps == null || filters.length == 0 || filterOps.length == 0) {
+            return inodes.parallelStream();
+        }
+        long start = System.currentTimeMillis();
+        try {
+            return produceFilteredStream(inodes, filters, filterOps);
+        } finally {
+            long end = System.currentTimeMillis();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(
+                        "Settings filters: {} with filterOps: {} took: {} ms.",
+                        Arrays.asList(filters),
+                        Arrays.asList(filterOps),
+                        (end - start));
+            }
+        }
     }
 
-    return stream;
-  }
-
-  /**
-   * Optimized filter method for filtering down a set of INodes to a smaller subset but returns a
-   * Stream for further processing.
-   *
-   * @param inodes the main inode set to work on
-   * @param filters set of filters to use
-   * @param filterOps matching length set of filter operands and operators
-   * @return the stream of filtered inodes
-   */
-  @Override // QueryEngine
-  public Stream<INode> combinedFilterToStream(
-      Collection<INode> inodes, String[] filters, String[] filterOps) {
-    if (filters == null || filterOps == null || filters.length == 0 || filterOps.length == 0) {
-      return inodes.parallelStream();
+    /**
+     * Main filter method for filtering down a set of INodes to a smaller subset.
+     *
+     * @param inodes the main inode set to work on
+     * @param filters set of filters to use
+     * @param filterOps matching length set of filter operands and operators
+     * @return the filtered set of inodes
+     */
+    @Override // QueryEngine
+    public Collection<INode> combinedFilter(
+            Collection<INode> inodes, String[] filters, String[] filterOps) {
+        if (filters == null || filterOps == null || filters.length == 0 || filterOps.length == 0) {
+            return inodes;
+        }
+        long start = System.currentTimeMillis();
+        try {
+            return produceFilteredStream(inodes, filters, filterOps).collect(Collectors.toList());
+        } finally {
+            long end = System.currentTimeMillis();
+            LOG.info(
+                    "Performing filters: {} with filterOps: {} took: {} ms.",
+                    Arrays.asList(filters),
+                    Arrays.asList(filterOps),
+                    (end - start));
+        }
     }
-    long start = System.currentTimeMillis();
-    try {
-      return produceFilteredStream(inodes, filters, filterOps);
-    } finally {
-      long end = System.currentTimeMillis();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(
-            "Settings filters: {} with filterOps: {} took: {} ms.",
-            Arrays.asList(filters),
-            Arrays.asList(filterOps),
-            (end - start));
-      }
+
+    private Function<INode, Boolean> getFilter(String filter, String[] filterOps) {
+        long start = System.currentTimeMillis();
+        try {
+            // Values for all other filters
+            String op = filterOps[0]; // 过滤操作符
+            String opValue = filterOps[1]; // 要过滤的值
+
+            // Long value filters 数值类型过滤
+            Function<INode, Long> longFunction = getFilterFunctionToLongForINode(filter);
+            if (longFunction != null) {
+                Function<Long, Boolean> longCompFunction =
+                        getFilterFunctionForLong(Long.parseLong(opValue), op);
+                return longFunction.andThen(longCompFunction);
+            }
+
+            // String value filters String类型过滤
+            Function<INode, String> strFunction = getFilterFunctionToStringForINode(filter);
+            if (strFunction != null) {
+                Function<String, Boolean> strCompFunction = getFilterFunctionForString(opValue, op);
+                return strFunction.andThen(strCompFunction);
+            }
+
+            // Boolean value filters Boolean类型过滤
+            Function<INode, Boolean> boolFunction = getFilterFunctionToBooleanForINode(filter);
+            if (boolFunction != null) {
+                Function<Boolean, Boolean> boolCompFunction =
+                        getFilterFunctionForBoolean(Boolean.parseBoolean(opValue), op);
+                return boolFunction.andThen(boolCompFunction);
+            }
+
+            throw new IllegalArgumentException(
+                    "Failed to determine filter: "
+                            + filter
+                            + ", with operations: "
+                            + Arrays.asList(filterOps)
+                            + ".\nCheck your filter arguments."
+                            + "\nPossible filters and operations available at /filters and /filterOps.");
+        } finally {
+            long end = System.currentTimeMillis();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(
+                        "Obtaining filter: {} with filterOps:{} took: {} ms.",
+                        filter,
+                        Arrays.asList(filterOps),
+                        (end - start));
+            }
+        }
     }
-  }
-
-  /**
-   * Main filter method for filtering down a set of INodes to a smaller subset.
-   *
-   * @param inodes the main inode set to work on
-   * @param filters set of filters to use
-   * @param filterOps matching length set of filter operands and operators
-   * @return the filtered set of inodes
-   */
-  @Override // QueryEngine
-  public Collection<INode> combinedFilter(
-      Collection<INode> inodes, String[] filters, String[] filterOps) {
-    if (filters == null || filterOps == null || filters.length == 0 || filterOps.length == 0) {
-      return inodes;
-    }
-    long start = System.currentTimeMillis();
-    try {
-      return produceFilteredStream(inodes, filters, filterOps).collect(Collectors.toList());
-    } finally {
-      long end = System.currentTimeMillis();
-      LOG.info(
-          "Performing filters: {} with filterOps: {} took: {} ms.",
-          Arrays.asList(filters),
-          Arrays.asList(filterOps),
-          (end - start));
-    }
-  }
-
-  private Function<INode, Boolean> getFilter(String filter, String[] filterOps) {
-    long start = System.currentTimeMillis();
-    try {
-      // Values for all other filters
-      String op = filterOps[0]; // 过滤操作符
-      String opValue = filterOps[1]; // 要过滤的值
-
-      // Long value filters 数值类型过滤
-      Function<INode, Long> longFunction = getFilterFunctionToLongForINode(filter);
-      if (longFunction != null) {
-        Function<Long, Boolean> longCompFunction =
-            getFilterFunctionForLong(Long.parseLong(opValue), op);
-        return longFunction.andThen(longCompFunction);
-      }
-
-      // String value filters String类型过滤
-      Function<INode, String> strFunction = getFilterFunctionToStringForINode(filter);
-      if (strFunction != null) {
-        Function<String, Boolean> strCompFunction = getFilterFunctionForString(opValue, op);
-        return strFunction.andThen(strCompFunction);
-      }
-
-      // Boolean value filters Boolean类型过滤
-      Function<INode, Boolean> boolFunction = getFilterFunctionToBooleanForINode(filter);
-      if (boolFunction != null) {
-        Function<Boolean, Boolean> boolCompFunction =
-            getFilterFunctionForBoolean(Boolean.parseBoolean(opValue), op);
-        return boolFunction.andThen(boolCompFunction);
-      }
-
-      throw new IllegalArgumentException(
-          "Failed to determine filter: "
-              + filter
-              + ", with operations: "
-              + Arrays.asList(filterOps)
-              + ".\nCheck your filter arguments."
-              + "\nPossible filters and operations available at /filters and /filterOps.");
-    } finally {
-      long end = System.currentTimeMillis();
-      if (LOG.isDebugEnabled()) {
-        LOG.debug(
-            "Obtaining filter: {} with filterOps:{} took: {} ms.",
-            filter,
-            Arrays.asList(filterOps),
-            (end - start));
-      }
-    }
-  }
 }

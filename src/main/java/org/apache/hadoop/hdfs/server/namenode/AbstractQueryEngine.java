@@ -848,11 +848,12 @@ public abstract class AbstractQueryEngine implements QueryEngine {
   }
 
   /**
+   * 生成汇总直方图
    * Produces Histogram for generic summation.
    *
    * @param inodes inodes
-   * @param namingFunction function to string
-   * @param dataFunction function to long
+   * @param namingFunction function to string 统计类型函数
+   * @param dataFunction function to long 数量统计函数
    * @return histogram of sums
    */
   @Override // QueryEngine
@@ -1118,8 +1119,7 @@ public abstract class AbstractQueryEngine implements QueryEngine {
     Map<String, Long> histogram =
         genericSummingHistogram(
             inodes,
-            node ->
-                SpaceSizeHistogram.determineBucketFunction.apply(node.asFile().computeFileSize()),
+            node -> SpaceSizeHistogram.determineBucketFunction.apply(node.asFile().computeFileSize()),
             getSumFunctionForINode(sum));
     return Histograms.orderByKeyOrder(histogram, keys);
   }

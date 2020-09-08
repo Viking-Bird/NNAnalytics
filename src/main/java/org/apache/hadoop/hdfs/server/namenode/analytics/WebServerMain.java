@@ -972,6 +972,7 @@ public class WebServerMain implements ApplicationMain {
                         final boolean rawTimestamps = rawTimestampsBool != null ? rawTimestampsBool : false;
 
                         QueryChecker.isValidQuery(set, filters, type, sum, filterOps, find);
+                        // 获取过滤后的INode集合
                         Stream<INode> filteredINodes =
                                 Helper.setFilters(nameNodeLoader, set, filters, filterOps);
 
