@@ -37,7 +37,9 @@ import org.apache.hadoop.io.IOUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 
-/** NNA Utility class. */
+/**
+ * NNA Utility class.
+ */
 public class Helper {
 
     /**
@@ -84,7 +86,7 @@ public class Helper {
      * Get the title of a chart based on histogram type.
      *
      * @param histType the histogram type
-     * @param sum the sum type
+     * @param sum      the sum type
      * @return a String representing the title of the histogram
      */
     public static String toTitle(String histType, String sum) {
@@ -104,10 +106,10 @@ public class Helper {
      * Utility method for performing filtering against NameNode.
      *
      * @param nameNodeLoader the NameNodeLoader
-     * @param set whether set of files or dirs
-     * @param filters the filter types
-     * @param filterOps the filter operations
-     * @param find find a min, max, or avg of inode fields
+     * @param set            whether set of files or dirs
+     * @param filters        the filter types
+     * @param filterOps      the filter operations
+     * @param find           find a min, max, or avg of inode fields
      * @return the inodes collection that passed the filter
      */
     public static Collection<INode> performFilters(
@@ -124,9 +126,9 @@ public class Helper {
      * Utility method for performing filtering against NameNode.
      *
      * @param nameNodeLoader the NameNodeLoader
-     * @param set whether set of files or dirs
-     * @param filters the filter types
-     * @param filterOps the filter operations
+     * @param set            whether set of files or dirs
+     * @param filters        the filter types
+     * @param filterOps      the filter operations
      * @return the inodes collection that passed the filter
      */
     public static Collection<INode> performFilters(
@@ -144,9 +146,9 @@ public class Helper {
      * Utility method for setting up filtering against NameNode.
      *
      * @param nameNodeLoader the NameNodeLoader
-     * @param set whether set of files or dirs 标识是文件还是目录
-     * @param filters the filter types 过滤的类型
-     * @param filterOps the filter operations 过滤操作符和值
+     * @param set            whether set of files or dirs 标识是文件还是目录
+     * @param filters        the filter types 过滤的类型
+     * @param filterOps      the filter operations 过滤操作符和值
      * @return the inodes collection that passed the filter 过滤后的inodes集合
      */
     public static Stream<INode> setFilters(
@@ -170,7 +172,7 @@ public class Helper {
     /**
      * Write a set of enums out to HTTP Response as a JSON list.
      *
-     * @param resp the http response
+     * @param resp   the http response
      * @param values the enums
      * @throws IOException if parsing or writing fails
      */
@@ -282,6 +284,7 @@ public class Helper {
     }
 
     /**
+     * 获取指定层级的inode目录的名称
      * Returns function that maps an inode to its parent directory down to a specific depth.
      *
      * @param dirDepth the depth of the parent to fetch
@@ -290,6 +293,7 @@ public class Helper {
     public static Function<INode, String> getDirectoryAtDepthFunction(int dirDepth) {
         return node -> {
             try {
+                // 获取指定层级的inode目录的全路径
                 INodeDirectory parent = node.getParent();
                 int topParentDepth = new Path(parent.getFullPathName()).depth();
                 if (topParentDepth < dirDepth) {
@@ -308,7 +312,7 @@ public class Helper {
     /**
      * Create the query object used for tracking user queries.
      *
-     * @param raw the http request
+     * @param raw      the http request
      * @param userName the username who issued the query
      * @return the query object for tracking
      */

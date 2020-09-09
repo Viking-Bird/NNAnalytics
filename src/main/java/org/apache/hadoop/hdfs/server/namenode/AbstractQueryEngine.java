@@ -144,6 +144,7 @@ public abstract class AbstractQueryEngine implements QueryEngine {
   }
 
   /**
+   * 或者指定条件的全部数据
    * Get a Function to convert INode to a Long value.
    *
    * @param filter the filter to look for
@@ -293,6 +294,7 @@ public abstract class AbstractQueryEngine implements QueryEngine {
   }
 
   /**
+   * 根据sum统计指定的数值
    * Get a Function that converts an INode to a single Long for summation. Used mostly by Histogram
    * functions.
    *
@@ -583,6 +585,7 @@ public abstract class AbstractQueryEngine implements QueryEngine {
   }
 
   /**
+   * 根据比较条件获取Boolean类型的条件表达式
    * Get a Function that converts a Long into a Boolean expression.
    *
    * @param value the value to compute against 比较的值

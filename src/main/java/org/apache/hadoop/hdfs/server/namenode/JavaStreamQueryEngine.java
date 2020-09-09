@@ -41,14 +41,14 @@ public class JavaStreamQueryEngine extends AbstractQueryEngine {
         final Function<INode, Boolean>[] filterArray =
                 (Function<INode, Boolean>[]) new Function[filters.length];
 
-        // 1、先获取Boolean类型的Function函数
+        // 1、根据filterOps表达式获取Boolean类型的Function函数
         for (int i = 0; i < filters.length; i++) {
             String filter = filters[i];
             String[] filterOp = filterOps[i].split(":");
             Function<INode, Boolean> filterFunc = getFilter(filter, filterOp);
             filterArray[i] = filterFunc;
         }
-        // 2、执行过滤，使用Stream filter函数对结果进行过滤
+        // 2、执行过滤，使用Stream filter函数对结果进行过滤：根据查找类型找到所有的数据，然后再根据条件表达式进行数据过滤
         Stream<INode> stream = inodes.parallelStream();
         for (Function<INode, Boolean> filter : filterArray) {
             stream = stream.filter(filter::apply);

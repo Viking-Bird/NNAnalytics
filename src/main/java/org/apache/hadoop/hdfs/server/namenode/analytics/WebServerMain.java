@@ -1085,6 +1085,7 @@ public class WebServerMain implements ApplicationMain {
                         }
 
                         // Slice top and bottom.
+                        // 执行top操作
                         if (top != null && bottom != null) {
                             throw new IllegalArgumentException("Please choose only one type of slice.");
                         } else if (top != null && top > 0) {
@@ -1094,6 +1095,7 @@ public class WebServerMain implements ApplicationMain {
                         }
 
                         // Sort results.
+                        // 对结果进行排序
                         if (sortAscending != null && sortDescending != null) {
                             throw new IllegalArgumentException("Please choose one type of sort.");
                         } else if (sortAscending != null && sortAscending) {
