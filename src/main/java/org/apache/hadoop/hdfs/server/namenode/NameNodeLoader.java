@@ -331,6 +331,7 @@ public class NameNodeLoader {
         conf.addResource("hdfs-site.xml");
       }
     }
+    // 覆盖默认配置，不开启edit回滚和checkpoint操作
     handleConfigurationOverrides(conf, nnaConf);
     final long start = System.currentTimeMillis();
 
@@ -400,7 +401,7 @@ public class NameNodeLoader {
       LOG.info("Setting: {} to: {} ", DFSConfigKeys.DFS_HA_LOGROLL_PERIOD_KEY, (-1));
       conf.setInt(DFSConfigKeys.DFS_HA_LOGROLL_PERIOD_KEY, -1);
 
-      // dfs.ha.standby.checkpoints配置项的值为true，表示使用StandBy NameNode来定时进行checkpoint操作
+      // dfs.ha.standby.checkpoints配置项的值为true，表示使用StandBy NameNode来定时进行checkpoint操作，将edit文件与fsimage文件合并
       LOG.info("Setting: {} to: {}", DFSConfigKeys.DFS_HA_STANDBY_CHECKPOINTS_KEY, false);
       conf.setBoolean(DFSConfigKeys.DFS_HA_STANDBY_CHECKPOINTS_KEY, false);
 
