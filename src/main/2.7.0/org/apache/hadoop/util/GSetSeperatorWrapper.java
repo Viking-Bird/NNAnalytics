@@ -26,6 +26,9 @@ import org.apache.hadoop.hdfs.server.namenode.INode;
 import org.apache.hadoop.hdfs.server.namenode.INodeWithAdditionalFields;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * 维护内存中的文件和目录信息，使editlog的回放操作都映射到fileSet和dirSet上
+ */
 public class GSetSeperatorWrapper implements GSet<INode, INodeWithAdditionalFields> {
 
   private final Map<INode, INodeWithAdditionalFields> fileSet;

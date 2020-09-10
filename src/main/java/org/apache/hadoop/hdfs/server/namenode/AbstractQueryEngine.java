@@ -85,14 +85,16 @@ public abstract class AbstractQueryEngine implements QueryEngine {
     namesystem.writeLock();
     try {
       FSDirectory fsDirectory = namesystem.getFSDirectory();
+      // 反射获取保存INode信息的map对象
       INodeMap inodeMap = fsDirectory.getINodeMap();
       Field mapField = inodeMap.getClass().getDeclaredField("map");
-      mapField.setAccessible(true);
+      mapField.setAccessible(true);// 因为这个map是私有的，所以要设置accessible为true，让它能被调用者修改
       GSet<INode, INodeWithAdditionalFields> gset =
-          (GSet<INode, INodeWithAdditionalFields>) mapField.get(inodeMap);
+          (GSet<INode, INodeWithAdditionalFields>) mapField.get(inodeMap);// 获取inode信息
 
       filterINodes(gset);
 
+      // 修改INodeMap对象的map属性的值为GSetSeperatorWrapper，通过自定义的GSet对象来完成NNA files和dirs数据的更新
       GSet<INode, INodeWithAdditionalFields> newGSet = new GSetSeperatorWrapper(files, dirs);
       mapField.set(inodeMap, newGSet);
     } finally {

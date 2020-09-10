@@ -361,6 +361,7 @@ public class NameNodeLoader {
     }
 
     // Let QueryEngine deal with inode set from here.
+      // 获取全部inode信息，初始化查询引擎
     queryEngine.handleGSet(preloadedInodes, namesystem);
 
     if (preloadedInodes == null) {
@@ -397,7 +398,7 @@ public class NameNodeLoader {
 
       // How often, in seconds, the StandbyNode should ask the active to roll edit logs.
       // 在HA模式下，standby NN会周期的让active NN对edits进行回滚，间隔周期由dfs.ha.log-roll.period控制，默认是120s
-      // 负数表示不触发回滚
+      // 负数表示不触发滚动
       LOG.info("Setting: {} to: {} ", DFSConfigKeys.DFS_HA_LOGROLL_PERIOD_KEY, (-1));
       conf.setInt(DFSConfigKeys.DFS_HA_LOGROLL_PERIOD_KEY, -1);
 
